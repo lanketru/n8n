@@ -2075,7 +2075,6 @@ export interface ISourceData {
 
 export interface StartNodeData {
 	name: string;
-	// TODO: What is this for?
 	sourceData: ISourceData | null;
 }
 
