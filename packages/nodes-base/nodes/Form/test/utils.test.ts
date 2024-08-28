@@ -1,6 +1,5 @@
 import { mock } from 'jest-mock-extended';
-import type { IWebhookFunctions } from 'n8n-workflow';
-import type { FormField } from '../interfaces';
+import type { FormFieldsParameter, IWebhookFunctions } from 'n8n-workflow';
 import { formWebhook, prepareFormData } from '../utils';
 
 describe('FormTrigger, formWebhook', () => {
@@ -12,7 +11,7 @@ describe('FormTrigger, formWebhook', () => {
 		const executeFunctions = mock<IWebhookFunctions>();
 		const mockRender = jest.fn();
 
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{ fieldLabel: 'Name', fieldType: 'text', requiredField: true },
 			{ fieldLabel: 'Age', fieldType: 'number', requiredField: false },
 			{
@@ -49,6 +48,7 @@ describe('FormTrigger, formWebhook', () => {
 
 		expect(mockRender).toHaveBeenCalledWith('form-trigger', {
 			appendAttribution: true,
+			buttonLabel: 'Submit form',
 			formDescription: 'Test Description',
 			formFields: [
 				{
@@ -108,7 +108,7 @@ describe('FormTrigger, formWebhook', () => {
 		const mockStatus = jest.fn();
 		const mockEnd = jest.fn();
 
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{ fieldLabel: 'Name', fieldType: 'text', requiredField: true },
 			{ fieldLabel: 'Age', fieldType: 'number', requiredField: false },
 		];
@@ -151,7 +151,7 @@ describe('FormTrigger, formWebhook', () => {
 
 describe('FormTrigger, prepareFormData', () => {
 	it('should return valid form data with given parameters', () => {
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{
 				fieldLabel: 'Name',
 				fieldType: 'text',
@@ -191,6 +191,7 @@ describe('FormTrigger, prepareFormData', () => {
 			query,
 			instanceId: 'test-instance',
 			useResponseData: true,
+			buttonLabel: 'Submit form',
 		});
 
 		expect(result).toEqual({
@@ -246,12 +247,13 @@ describe('FormTrigger, prepareFormData', () => {
 			],
 			useResponseData: true,
 			appendAttribution: true,
+			buttonLabel: 'Submit form',
 			redirectUrl: 'https://example.com/thank-you',
 		});
 	});
 
 	it('should handle missing optional fields gracefully', () => {
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{
 				fieldLabel: 'Name',
 				fieldType: 'text',
@@ -268,6 +270,7 @@ describe('FormTrigger, prepareFormData', () => {
 			formFields,
 			testRun: true,
 			query: {},
+			buttonLabel: 'Submit form',
 		});
 
 		expect(result).toEqual({
@@ -291,11 +294,12 @@ describe('FormTrigger, prepareFormData', () => {
 			],
 			useResponseData: undefined,
 			appendAttribution: true,
+			buttonLabel: 'Submit form',
 		});
 	});
 
 	it('should set redirectUrl with http if protocol is missing', () => {
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{
 				fieldLabel: 'Name',
 				fieldType: 'text',
@@ -335,7 +339,7 @@ describe('FormTrigger, prepareFormData', () => {
 	});
 
 	it('should correctly handle multiselect fields', () => {
-		const formFields: FormField[] = [
+		const formFields: FormFieldsParameter = [
 			{
 				fieldLabel: 'Favorite Colors',
 				fieldType: 'text',
