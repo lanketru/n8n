@@ -18,6 +18,7 @@ import type {
 	NodeError,
 	Workflow,
 	IConnectedNode,
+	AssignmentCollectionValue,
 } from 'n8n-workflow';
 import { NodeHelpers, NodeConnectionType } from 'n8n-workflow';
 
@@ -41,6 +42,7 @@ import {
 	MAX_DISPLAY_ITEMS_AUTO_ALL,
 	TEST_PIN_DATA,
 	HTML_NODE_TYPE,
+	SET_NODE_TYPE,
 } from '@/constants';
 
 import BinaryDataDisplay from '@/components/BinaryDataDisplay.vue';
@@ -646,11 +648,77 @@ export default defineComponent({
 
 				if (workflowNode) {
 					const executionHints = this.executionHints;
+
 					const nodeHints = NodeHelpers.getNodeHints(this.workflow, workflowNode, this.nodeType, {
 						runExecutionData: this.workflowExecution?.data ?? null,
 						runIndex: this.runIndex,
 						connectionInputData: this.parentNodeOutputData,
 					});
+
+					// add limit reached hint
+					if (this.hasNodeRun && workflowNode.parameters.limit) {
+						const nodeOutputData =
+							this.workflowRunData?.[this.node.name]?.[this.runIndex]?.data?.main[0];
+						if (nodeOutputData && nodeOutputData.length === workflowNode.parameters.limit) {
+							nodeHints.push({
+								message: `Limit of ${workflowNode.parameters.limit} items reached. There may be more items that aren't being returned`,
+								location: 'outputPane',
+								whenToDisplay: 'afterExecution',
+							});
+						}
+					}
+
+					// add Execute Once hint
+					if (
+						this.parentNodeOutputData &&
+						this.parentNodeOutputData.length > 1 &&
+						(workflowNode.parameters.operation === 'getAll' ||
+							this.nodeType.properties.find(
+								(property) => property.name === 'operation' && property.default === 'getAll',
+							))
+					) {
+						const executeOnce = this.workflow.getNode(this.node.name)?.executeOnce;
+
+						if (!executeOnce) {
+							nodeHints.push({
+								message:
+									"Operation would be performed for each input item, you may want to use the 'Execute Once' setting to only execute once for the first input item",
+								whenToDisplay: 'beforeExecution',
+								location: 'outputPane',
+							});
+						}
+					}
+
+					// add expression in field name hint for Set node
+					if (this.node.type === SET_NODE_TYPE && this.node.parameters.mode === 'manual') {
+						const rawParameters = NodeHelpers.getNodeParameters(
+							this.nodeType.properties,
+							this.node.parameters,
+							true,
+							false,
+							this.node,
+							undefined,
+							false,
+						);
+
+						const assignments =
+							((rawParameters?.assignments as AssignmentCollectionValue) || {})?.assignments || [];
+						const expressionInFieldName: number[] = [];
+
+						for (const [index, assignment] of assignments.entries()) {
+							if (assignment.name.startsWith('=')) {
+								expressionInFieldName.push(index + 1);
+							}
+						}
+
+						if (expressionInFieldName.length > 0) {
+							nodeHints.push({
+								message: `Expression is used in 'Fields to Set' in ${expressionInFieldName.length === 1 ? 'field' : 'fields'} ${expressionInFieldName.join(', ')} , did you mean to use it in value instead?`,
+								whenToDisplay: 'beforeExecution',
+								location: 'outputPane',
+							});
+						}
+					}
 
 					return executionHints.concat(nodeHints).filter(this.shouldHintBeDisplayed);
 				}
