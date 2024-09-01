@@ -30,8 +30,8 @@ async function main() {
 
 	const runDir = path.join(baseRunDir, n8nSetupToUse);
 	fs.emptyDirSync(runDir);
-	// Make sure the n8n container user (node) has write permissions to the run directory
-	await $`chmod 777 ${runDir}`;
+
+	const currentUserId = process.getuid?.() ?? 0;
 
 	const dockerComposeClient = new DockerComposeClient({
 		$: $({
@@ -42,6 +42,7 @@ async function main() {
 				BENCHMARK_VERSION: benchmarkTag,
 				K6_API_TOKEN: k6ApiToken,
 				RUN_DIR: runDir,
+				RUN_USER_AND_GROUP: `${currentUserId}:${currentUserId}`,
 			},
 		}),
 	});
