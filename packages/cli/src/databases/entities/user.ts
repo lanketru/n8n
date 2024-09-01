@@ -26,6 +26,7 @@ import {
 import { hasScope, type ScopeOptions, type Scope } from '@n8n/permissions';
 import type { ProjectRelation } from './project-relation';
 import { NoUrl } from '@/validators/no-url.validator';
+import type { ApiKeys } from './api-keys';
 
 export type GlobalRole = 'global:owner' | 'global:admin' | 'global:member';
 export type AssignableRole = Exclude<GlobalRole, 'global:owner'>;
@@ -87,6 +88,9 @@ export class User extends WithTimestamps implements IUser {
 	@OneToMany('AuthIdentity', 'user')
 	authIdentities: AuthIdentity[];
 
+	@OneToMany('ApiKeys', 'user')
+	apiKeys: ApiKeys[];
+
 	@OneToMany('SharedWorkflow', 'user')
 	sharedWorkflows: SharedWorkflow[];
 
@@ -104,10 +108,6 @@ export class User extends WithTimestamps implements IUser {
 	preUpsertHook(): void {
 		this.email = this.email?.toLowerCase() ?? null;
 	}
-
-	@Column({ type: String, nullable: true })
-	@Index({ unique: true })
-	apiKey: string | null;
 
 	@Column({ type: Boolean, default: false })
 	mfaEnabled: boolean;
@@ -149,7 +149,7 @@ export class User extends WithTimestamps implements IUser {
 	}
 
 	toJSON() {
-		const { password, apiKey, ...rest } = this;
+		const { password, ...rest } = this;
 		return rest;
 	}
 

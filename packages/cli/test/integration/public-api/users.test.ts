@@ -1,6 +1,11 @@
 import { setupTestServer } from '@test-integration/utils';
 import * as testDb from '../shared/test-db';
-import { createMember, createOwner, getUserById } from '@test-integration/db/users';
+import {
+	createMember,
+	createMemberWithApiKey,
+	createOwnerWithApiKey,
+	getUserById,
+} from '@test-integration/db/users';
 import { mockInstance } from '@test/mocking';
 import { Telemetry } from '@/telemetry';
 import { FeatureNotLicensedError } from '@/errors/feature-not-licensed.error';
@@ -14,7 +19,7 @@ describe('Users in Public API', () => {
 	});
 
 	beforeEach(async () => {
-		await testDb.truncate(['User']);
+		await testDb.truncate(['ApiKeys', 'User']);
 	});
 
 	describe('POST /users', () => {
@@ -22,13 +27,12 @@ describe('Users in Public API', () => {
 			/**
 			 * Arrange
 			 */
-			const owner = await createOwner({ withApiKey: false });
 			const payload = { email: 'test@test.com', role: 'global:admin' };
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(owner).post('/users').send(payload);
+			const response = await testServer.publicApiAgentWithApiKey('').post('/users').send(payload);
 
 			/**
 			 * Assert
@@ -41,13 +45,16 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const member = await createMember({ withApiKey: true });
+			const { apiKey } = await createMemberWithApiKey();
 			const payload = [{ email: 'test@test.com', role: 'global:admin' }];
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(member).post('/users').send(payload);
+			const response = await testServer
+				.publicApiAgentWithApiKey(apiKey)
+				.post('/users')
+				.send(payload);
 
 			/**
 			 * Assert
@@ -61,13 +68,17 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const owner = await createOwner({ withApiKey: true });
+			const { apiKey } = await createOwnerWithApiKey();
+			await createOwnerWithApiKey();
 			const payload = [{ email: 'test@test.com', role: 'global:admin' }];
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(owner).post('/users').send(payload);
+			const response = await testServer
+				.publicApiAgentWithApiKey(apiKey)
+				.post('/users')
+				.send(payload);
 
 			/**
 			 * Assert
@@ -98,13 +109,12 @@ describe('Users in Public API', () => {
 			/**
 			 * Arrange
 			 */
-			const owner = await createOwner({ withApiKey: false });
 			const member = await createMember();
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(owner).delete(`/users/${member.id}`);
+			const response = await testServer.publicApiAgentWithApiKey('').delete(`/users/${member.id}`);
 
 			/**
 			 * Assert
@@ -117,14 +127,14 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const firstMember = await createMember({ withApiKey: true });
+			const { apiKey } = await createMemberWithApiKey();
 			const secondMember = await createMember();
 
 			/**
 			 * Act
 			 */
 			const response = await testServer
-				.publicApiAgentFor(firstMember)
+				.publicApiAgentWithApiKey(apiKey)
 				.delete(`/users/${secondMember.id}`);
 
 			/**
@@ -139,13 +149,15 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const owner = await createOwner({ withApiKey: true });
+			const { apiKey } = await createOwnerWithApiKey();
 			const member = await createMember();
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(owner).delete(`/users/${member.id}`);
+			const response = await testServer
+				.publicApiAgentWithApiKey(apiKey)
+				.delete(`/users/${member.id}`);
 
 			/**
 			 * Assert
@@ -160,13 +172,14 @@ describe('Users in Public API', () => {
 			/**
 			 * Arrange
 			 */
-			const owner = await createOwner({ withApiKey: false });
 			const member = await createMember();
 
 			/**
 			 * Act
 			 */
-			const response = await testServer.publicApiAgentFor(owner).patch(`/users/${member.id}/role`);
+			const response = await testServer
+				.publicApiAgentWithApiKey('')
+				.patch(`/users/${member.id}/role`);
 
 			/**
 			 * Assert
@@ -178,7 +191,7 @@ describe('Users in Public API', () => {
 			/**
 			 * Arrange
 			 */
-			const owner = await createOwner({ withApiKey: true });
+			const { apiKey } = await createOwnerWithApiKey();
 			const member = await createMember();
 			const payload = { newRoleName: 'global:admin' };
 
@@ -186,7 +199,7 @@ describe('Users in Public API', () => {
 			 * Act
 			 */
 			const response = await testServer
-				.publicApiAgentFor(owner)
+				.publicApiAgentWithApiKey(apiKey)
 				.patch(`/users/${member.id}/role`)
 				.send(payload);
 
@@ -205,7 +218,7 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const firstMember = await createMember({ withApiKey: true });
+			const { apiKey } = await createMemberWithApiKey();
 			const secondMember = await createMember();
 			const payload = { newRoleName: 'global:admin' };
 
@@ -213,7 +226,7 @@ describe('Users in Public API', () => {
 			 * Act
 			 */
 			const response = await testServer
-				.publicApiAgentFor(firstMember)
+				.publicApiAgentWithApiKey(apiKey)
 				.patch(`/users/${secondMember.id}/role`)
 				.send(payload);
 
@@ -229,7 +242,7 @@ describe('Users in Public API', () => {
 			 * Arrange
 			 */
 			testServer.license.enable('feat:advancedPermissions');
-			const owner = await createOwner({ withApiKey: true });
+			const { apiKey } = await createOwnerWithApiKey();
 			const member = await createMember();
 			const payload = { newRoleName: 'global:admin' };
 
@@ -237,7 +250,7 @@ describe('Users in Public API', () => {
 			 * Act
 			 */
 			const response = await testServer
-				.publicApiAgentFor(owner)
+				.publicApiAgentWithApiKey(apiKey)
 				.patch(`/users/${member.id}/role`)
 				.send(payload);
 

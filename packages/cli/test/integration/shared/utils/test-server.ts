@@ -56,13 +56,11 @@ function createAgent(app: express.Application, options?: { auth: boolean; user: 
 
 function publicApiAgent(
 	app: express.Application,
-	{ user, version = 1 }: { user: User; version?: number },
+	{ version = 1, apiKey }: { apiKey: string; version?: number },
 ) {
 	const agent = request.agent(app);
 	void agent.use(prefix(`${PUBLIC_API_REST_PATH_SEGMENT}/v${version}`));
-	if (user.apiKey) {
-		void agent.set({ 'X-N8N-API-KEY': user.apiKey });
-	}
+	void agent.set({ 'X-N8N-API-KEY': apiKey });
 	return agent;
 }
 
@@ -89,7 +87,7 @@ export const setupTestServer = ({
 		httpServer: app.listen(0),
 		authAgentFor: (user: User) => createAgent(app, { auth: true, user }),
 		authlessAgent: createAgent(app),
-		publicApiAgentFor: (user) => publicApiAgent(app, { user }),
+		publicApiAgentWithApiKey: (apiKey) => publicApiAgent(app, { apiKey }),
 		license: new LicenseMocker(),
 	};
 
