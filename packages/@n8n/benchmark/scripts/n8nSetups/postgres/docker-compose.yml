@@ -6,6 +6,9 @@ services:
       - POSTGRES_DB=n8n
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ${RUN_DIR}/postgres:/var/lib/postgresql/data
   n8n:
     image: ghcr.io/n8n-io/n8n:${N8N_VERSION:-latest}
     environment:
@@ -17,7 +20,7 @@ services:
     ports:
       - 5678:5678
     volumes:
-      - ${RUN_DIR}:/n8n
+      - ${RUN_DIR}/n8n:/n8n
     depends_on:
       - postgres
   benchmark:

@@ -10,6 +10,9 @@ services:
       - POSTGRES_DB=n8n
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ${RUN_DIR}/postgres:/var/lib/postgresql/data
   n8n_worker1:
     image: ghcr.io/n8n-io/n8n:${N8N_VERSION:-latest}
     environment:
@@ -23,7 +26,7 @@ services:
       - DB_POSTGRESDB_PASSWORD=password
     command: worker
     volumes:
-      - ${RUN_DIR}:/n8n
+      - ${RUN_DIR}/n8n-worker1:/n8n
     depends_on:
       - postgres
       - redis
@@ -40,7 +43,7 @@ services:
       - DB_POSTGRESDB_PASSWORD=password
     command: worker
     volumes:
-      - ${RUN_DIR}:/n8n
+      - ${RUN_DIR}/n8n-worker2:/n8n
     depends_on:
       - postgres
       - redis
@@ -58,7 +61,7 @@ services:
     ports:
       - 5678:5678
     volumes:
-      - ${RUN_DIR}:/n8n
+      - ${RUN_DIR}/n8n-main:/n8n
     depends_on:
       - postgres
       - redis
